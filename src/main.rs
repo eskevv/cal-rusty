@@ -1,187 +1,96 @@
-// use core::panic;
-// use std::num;
-// // use core::{num::dec2flt::parse, panic};
-// // fn get_input() -> String {
-// //   print!("Enter an operation: ");
-// //   io::stdout().flush().unwrap();
+fn valid_for_math(calculation: &str) -> bool {
+  let useable = vec!['+', '-', '/', '*', '=', ' ', '(', ')'];
 
-// //   let mut user_input = String::new();
-// //   io::stdin().read_line(&mut user_input).unwrap();
-// //   user_input.chars().filter(|c| !c.is_whitespace()).collect()
-// // }
+  calculation
+    .chars()
+    .all(|s| s.is_ascii_digit() || useable.contains(&&s))
+}
 
-// // fn parse_precedence(value: &str) -> Vec<i32> {
-// //   let mut operations: Vec<i32> = Vec::new();
+fn main() {
+  println!("\n  ** Modern Calculator 2023 **  \n");
 
-// //   let mut left_counter = 0;
-// //   let mut right_counter = 0;
+  let operation = "(((9 + 3) + 87)) / (((11111111 * 2)))";
 
-// //   for c in value.chars() {
-// //     if c == '(' {
-// //       left_counter += 1;
-// //     }
-// //     if c == ')' && right_counter + 1 == left_counter {
-// //       right_counter += 1;
-// //       let end_index = value.find(c).unwrap();
-// //       parse_precedence(&value[0..end_index - 1]);
-// //     }
-// //   }
+  let result = math_operation(&operation.to_string(), "IIIIIIIIIIIIIIIIIIII");
 
-// //   operations
-// // }
+  println!("\x1b[31m * [ANSWER]: \x1b[4m{result} \x1b[0m\n");
+}
 
-// // fn convert_to_operation(value: &String) {
-// //   if value.chars().any(|c| !valid_for_math(c)) {
-// //     panic!("!one or more invalid characters for math operations");
-// //   }
+fn math_operation(operation: &String, flag: &str) -> f32 {
+  if !valid_for_math(operation) {
+    panic!("!invalid math format given");
+  }
 
-// //   if !value.chars().any(|c| c == '+') {
-// //     panic!("!no operations passed");
-// //   }
+  println!("[DEBUG::ENTER]={operation}");
+  let mut left_count = 0;
+  let mut left_last_index = 0;
+  let mut left_repeats = 0;
+  let mut right_count = 0;
+  let mut right_last_index = 0;
+  let mut right_repeats = 0;
 
-// //   if value.ends_with('+') {
-// //     panic!("!invalid format");
-// //   }
+  let mut left_start = 0;
+  let mut new_string = String::from(operation.as_str());
+  let mut index = 0;
+  let mut can_start = true;
 
-// //   let numbers: Vec<&str> = value.split('+').collect();
+  for i in operation.chars() {
+    if index >= 1 && i == '(' && left_last_index == index - 1 {
+      left_repeats += 1;
+    }
+    if index >= 1 && i == ')' && right_last_index == index - 1 {
+      right_repeats += 1;
+    }
 
-// //   let num_1: i32 = numbers[0].parse().unwrap();
-// //   let num_2: i32 = numbers[1].parse().unwrap();
+    if i == '(' {
+      left_count += 1;
+      left_last_index = index;
+    } else if i == ')' {
+      right_count += 1;
+      right_last_index = index;
+    }
 
-// //   println!("{num_1} + {num_2} = {:?}", num_1 + num_2);
-// // }
+    if i == '(' && can_start {
+      left_start = index;
+      can_start = false;
+    }
 
-// // fn compute(value: &str) -> f32 {
-// //   let mut collection: Vec<&str> = Vec::new();
+    if i == ')' && left_count == right_count {
+      let repeats = std::cmp::min(left_repeats, right_repeats);
+      let mut to_parse = String::from(&operation[left_start + 1 + repeats..index - repeats]);
+      let to_replace = String::from(&operation[left_start..index + 1]);
 
-// //   let mut left_math = "";
-// //   let right_math = "";
+      let return_recursive = math_operation(&mut to_parse, flag).to_string();
+      new_string = new_string.replace(to_replace.as_str(), return_recursive.as_str());
 
-// //   let mut left_counter = 0;
-// //   let mut right_counter = 0;
-// //   let mut start = 0;
-// //   let mut index = 0;
+      println!("\x1b[35m\n * [UPDATE]:\x1b[0m {}\n", { &new_string });
+      println!("{flag}");
+      can_start = true;
+      left_repeats = 0;
+      right_repeats = 0;
+    }
 
-// //   for c in value.chars() {
-// //     left_counter += if c == '(' { 1 } else { 0 };
-// //     right_counter += if c == ')' { 1 } else { 0 };
+    index += 1;
+  }
 
-// //     if c == ')' && right_counter == left_counter {
+  resolve_operation(&mut new_string, flag)
+}
 
-// //       return compute(&value[start + 1..index]);
-// //     }
-
-// //     if c == '+' && right_counter == left_counter {
-// //       start = value[index..].find('(').unwrap() + index;
-// //     }
-
-// //     index += 1;
-// //   }
-
-// //   // collection
-// // }
-// // fn parse_operation(value: &str) -> i32 {
-// //   if value.chars().any(|c| !valid_for_math(c)) {
-// //     panic!("!invalid");
-// //   }
-
-// //   let left_index = value.find(|c: char| c.is_ascii_digit()).unwrap();
-// //   let slice_mid = &value[left_index + 1..];
-// //   let right_index = slice_mid.find(|c: char| c.is_ascii_digit()).unwrap() + (left_index + 1) + 1;
-// //   let operation = &value[left_index..right_index];
-
-// //   let valid_operators = ['+', '-', '=', '*'];
-
-// //   println!("{operation}");
-
-// //   let k = operation
-// //     .find(|c: char| valid_operators.contains(&c))
-// //     .unwrap();
-
-// //   let operator = &operation[k..k];
-// //   let first_num = &operation[left_index..left_index + 1];
-// //   let second_num = &operation[right_index..right_index + 1];
-
-// //   println!("{first_num} {operator} {second_num}");
-
-// //   0
-// // }
-
-// fn valid_for_math(c: char) -> bool {
-//   vec!['+', '-', '/', '*', '=', ' '].contains(&c) || c.is_ascii_digit()
-// }
-
-// fn basic_operation(operation: &str) -> f32 {
-//   if operation.chars().any(|c| !valid_for_math(c)) {
-//     panic!("!invalid operational format");
-//   }
-
-//   let valid_operators = ['+', '-', '/', '*'];
-//   let operators_found: Vec<char> = operation
-//     .chars()
-//     .filter(|c| valid_operators.contains(c))
-//     .collect();
-
-//   if operators_found.len() != 1 {
-//     panic!("!invalid operational format");
-//   }
-
-//   let operands: Vec<&str> = operation.split(operators_found[0]).collect();
-//   let operand_one: f32 = operands[0]
-//     .trim()
-//     .parse()
-//     .expect("!digits should not contain spaces");
-//   let operand_two: f32 = operands[1]
-//     .trim()
-//     .parse()
-//     .expect("!digits should not contain spaces");
-
-//   match operators_found[0] {
-//     '-' => operand_one - operand_two,
-//     '+' => operand_one + operand_two,
-//     '*' => operand_one * operand_two,
-//     '/' => operand_one / operand_two,
-//     _ => panic!("!unhandled operation"),
-//   }
-// }
-
-fn math_operation(operation: &mut String) -> f32 {
-  println!("[ENTER]  {operation}");
+fn resolve_operation(operation: &mut String, flag: &str) -> f32 {
   let mut operators: Vec<char> = Vec::new();
   let mut numbers: Vec<f32> = Vec::new();
 
   let mut digit_start = 0;
   let mut digit_started = false;
 
-  let mut left = 0;
-  let mut right = 0;
-  let mut left_start = 0;
-
-  let mut new_string = String::from(operation.as_str());
-  let mut index = 0;
-
-  for i in operation.chars() {
-    left += if i == '(' { 1 } else { 0 };
-    right += if i == ')' { 1 } else { 0 };
-
-    if i == '(' && left >= right {
-      left_start = index;
-    }
-
-    if i == ')' && left == right {
-      let mut to_parse = String::from(&operation[left_start + 1..index]);
-      let to_replace = String::from(&operation[left_start..index + 1]);
-      let return_recursive = math_operation(&mut to_parse).to_string();
-      new_string = new_string.replace(to_replace.as_str(), return_recursive.as_str());
-      println!("[UPDATE]: {}", { &new_string });
-    }
-
-    index += 1;
+  println!("\x1b[35m \n[INPUT]:\x1b[0m  {operation}\n");
+  let mut flag_steps = String::new();
+  for _ in 0..flag.len() - 6 {
+    flag_steps += "-";
   }
+  println!("<< {flag_steps} >>");
 
-  println!("[EXIT]   {new_string}");
-
-  for i in new_string.char_indices() {
+  for i in operation.char_indices() {
     let c = i.1;
     let index = i.0;
 
@@ -193,26 +102,33 @@ fn math_operation(operation: &mut String) -> f32 {
       digit_started = true;
     }
     if digit_started && c.is_whitespace() {
-      let h: String = new_string[digit_start..index].chars().collect();
+      let h: String = operation[digit_start..index].chars().collect();
       let num = h.parse::<f32>().unwrap();
       numbers.push(num);
       digit_started = false;
-    } else if digit_started && index == new_string.len() - 1 {
-      let h: String = new_string[digit_start..index + 1].chars().collect();
+    } else if digit_started && index == operation.len() - 1 {
+      let h: String = operation[digit_start..index + 1].chars().collect();
       let num = h.parse::<f32>().unwrap();
       numbers.push(num);
       digit_started = false;
     }
   }
 
-  println!("\nOPERATORS FOUND: {0:?}", operators);
-  println!("NUMBERS FOUND: {0:?}\n", numbers);
+  println!("OPERATORS FOUND: {0:?}", operators);
+  println!("NUMBERS FOUND: {0:?}", numbers);
 
+  println!("<< {flag_steps} >>");
+  let mut step = 1;
   while operators.iter().find(|&&c| c == '*' || c == '/') != None {
     let presedence_1 = operators.iter().position(|&c| c == '/' || c == '*');
     if presedence_1 != None {
       let index = presedence_1.unwrap();
-      println!("Before: {0:?} {1} {2:?}", numbers[index], operators[index], numbers[index + 1]);
+      println!(
+        "Step {step}: {0:?} {1} {2:?}",
+        numbers[index],
+        operators[index],
+        numbers[index + 1]
+      );
       match operators[index] {
         '*' => numbers[index] = numbers[index] * numbers[index + 1],
         '/' => numbers[index] = numbers[index] / numbers[index + 1],
@@ -220,14 +136,20 @@ fn math_operation(operation: &mut String) -> f32 {
       }
       operators.remove(index);
       numbers.remove(index + 1);
-      println!("After: {:?}\n", numbers[index]);
     }
+    step += 1;
   }
+
   while operators.iter().find(|&&c| c == '+' || c == '-') != None {
     let presedence_1 = operators.iter().position(|&c| c == '+' || c == '-');
     if presedence_1 != None {
       let index = presedence_1.unwrap();
-      println!("Before: {0:?} {1} {2:?}", numbers[index], operators[index], numbers[index + 1]);
+      println!(
+        "Step {step}: {0:?} {1} {2:?}",
+        numbers[index],
+        operators[index],
+        numbers[index + 1]
+      );
       match operators[index] {
         '+' => numbers[index] = numbers[index] + numbers[index + 1],
         '-' => numbers[index] = numbers[index] - numbers[index + 1],
@@ -235,58 +157,11 @@ fn math_operation(operation: &mut String) -> f32 {
       }
       operators.remove(index);
       numbers.remove(index + 1);
-      println!("After: {:?}\n", numbers[index]);
     }
+    step += 1;
   }
+  println!("\x1b[36m Answer = {}\x1b[0m", numbers[0]);
+  println!("<< {flag_steps} >>");
 
-  // println!("{:?}", numbers[0]);
   numbers[0]
-}
-
-// fn replace_str(value: &mut str, with: &mut str, start: usize) {
-//   let mut index: usize = 0;
-//   for i in value.chars() {
-//     if index < start {
-//       continue;
-//     }
-
-//     value.replace = with.chars().nth(index).unwrap();
-
-//     index += 1;
-//     if index == value.len() {
-//       break;
-//     }
-//   }
-// }
-
-// fn try_fn(words: &mut String) {
-//   let mut new_words = words.clone();
-//   for c in new_words.chars_mut() {
-//     if c == 'a' {
-//       *c = 'i';
-//     }
-//   }
-//   *words = new_words;
-// }
-
-// fn try_fn(words: &mut str) {
-//   let wora = words.replace("a", "a").as_str();
-
-//   *words = wora;
-// }
-
-// fn try_fn(words: &mut String) {
-//   let new_string = words.replace("a", "i");
-//   *words = new_string;
-// }
-
-fn main() {
-  println!("\nModern Calculator 2023");
-
-  // let operation = "(2 + 2) + ((3 + 1) + (4 + 8 / 2))";
-  let operation = "(2 + 9982 / 43 + 7) / (90 + 12 / 91 + 78 / 787 * 81) / (43 + 899)";
-
-  math_operation(&mut operation.to_string());
-
-  // println!("{operation} = {:?}", basic_operation(operation));
 }

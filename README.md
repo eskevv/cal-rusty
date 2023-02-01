@@ -5,7 +5,7 @@ Command Line w/ Rust :)
 1. choose between scientific and programmer mode
 2. enter a string of math operations into the command line
 3. w/Debug enabled: watch the operations be calculated in order of precedence
-4. fancy output with colors and loading
+4. colorful output and loading fx
 5. file input for multiple calculations
 
 *Flexibility:*

@@ -21,7 +21,7 @@ impl ProblemSolution {
     let compact = if is_compact {""} else {"\n"};
     let header = if show_header {format!("{}'\x1b[91mStack {}\x1b[0m'\n", space, self.stack)} else {String::new()};
 
-    println!("{header}{}[\x1b[35m Data \x1b[0m]: {}{}", space, self.problem, compact);
+    println!("{header}{}[\x1b[92m Data \x1b[0m]: {}{}", space, self.problem, compact);
 
     let mut index = 0;
     for i in &self.branches {

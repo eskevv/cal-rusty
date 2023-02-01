@@ -1,14 +1,15 @@
 mod calculator;
 use calculator::Calculator;
 mod tests;
+mod problem_solution;
 
 fn main() {
   println!("\n ** Modern Calculator 2023 ** \n");
 
-  let problem = "(100 + ( (20 - 90) + (100 - 11) ) - (87 -110))";
+  let problem = "(2 + 8 + 10 + 89) / (78 * 23)";
 
   let mut chip = Calculator::new();
-  let answer = chip.compute(problem);
 
-  chip.print_steps();
+  chip.compute(problem);
+  chip.solution.print_solution();
 }

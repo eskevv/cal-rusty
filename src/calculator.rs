@@ -1,46 +1,42 @@
-// TODO: fix parentheses not parsed well when close to each other
-// TODO: formated output using data structs and recursion / add color
+// BUG: parentheses not parsed well when close to each other
+
+// ADD: formated output using data structs and recursion / add color
+
 // TODO: time and sound for outputting calculations
+// TODO: refactor the parsing
+
+use crate::problem_solution::ProblemSolution;
 
 pub struct Calculator {
-  stages: Vec<String>,
   stack: i32,
   last_input: String,
-  result: f32,
+  pub solution: ProblemSolution,
 }
 
 impl Calculator {
   pub fn new() -> Self {
-    Calculator { stages: Vec::new(), stack: 0, last_input: String::new(), result: 0.0 }
+    Calculator {
+      stack: 0,
+      last_input: String::new(),
+      solution: ProblemSolution::new(),
+    }
   }
 
-  pub fn compute(&mut self, problem: &str) -> f32 {
+  pub fn compute(&mut self, problem: &str) {
     if !self.valid_for_math(problem) {
       panic!("!invalid math format given");
     }
 
     self.last_input = problem.to_string();
 
-    let cleaned_up = problem.replace(|c| char::is_whitespace(c), "");
-    self.parse_problem(problem, 1)
+    self.solution = self.parse_problem(problem, self.stack);
   }
 
-  pub fn print_steps(&self) {
-    println!("[INPUT]: {}", self.last_input);
-
-    println!("----------------------------");
-    for i in &self.stages {
-      println!("{i}");
-    }
-    println!("----------------------------");
-
-    println!("[ANSWER]: {}", self.result);
-  }
-
-  fn parse_problem(&mut self, problem: &str, stack: i32) -> f32 {
+  fn parse_problem(&mut self, problem: &str, stack: i32) -> ProblemSolution {
     let mut data = SimpliefiedParse::new(&problem);
-
-    // let mut stack = 1;
+    let mut local_solution = ProblemSolution::new();
+    local_solution.stack = stack;
+    local_solution.problem = problem.to_string();
 
     for i in problem.chars() {
       if data.index >= 1 && i == '(' && data.left_last_index == data.index - 1 {
@@ -63,36 +59,36 @@ impl Calculator {
       }
 
       if i == ')' && data.left_count == data.right_count {
-        self.evaluate_parsed(problem, &mut data, stack);
-        // stack += 1;
+        self.stack += 1;
+
+        let added = self.evaluate_parsed(problem, &mut data, local_solution.stack + 1);
+        local_solution.branches.push(added);
+      } else if data.index == problem.len() - 1 && data.result == problem {
+        self.stack -= 1;
       }
 
       data.index += 1;
     }
 
-    let answer = self.resolve_operation(&mut data.result, stack);
-    self.result = answer;
-    // if stack == 1 {
-    //   self.stages.push(format!("\n[ANSWER]: {answer}"));
-    // }
+    local_solution.answer = self.resolve_operation(&mut data.result, &mut local_solution);
 
-    // self.stack += 1;
-
-    answer
+    local_solution
   }
 
-  fn evaluate_parsed(&mut self, operation: &str, data: &mut SimpliefiedParse, stack: i32) {
-    // self.stages.push(format!("{}. {}", stack, data.result));
+  fn evaluate_parsed(&mut self, operation: &str, data: &mut SimpliefiedParse, stack: i32) -> ProblemSolution {
 
     let repeats = std::cmp::min(data.left_repeats, data.right_repeats);
     let to_replace = &operation[data.start..data.index + 1];
     let to_calculate = &operation[data.start + 1 + repeats..data.index - repeats];
-    let return_recursive = self.parse_problem(&to_calculate, 3);
+    let return_recursive = self.parse_problem(&to_calculate, stack);
 
-    data.result = data.result.replace(to_replace, &format!("{return_recursive}"));
+
+    data.result = data.result.replace(to_replace, &format!("{}", return_recursive.answer));
     data.can_start = true;
     data.left_repeats = 0;
     data.right_repeats = 0;
+
+    return_recursive
   }
 
   fn valid_for_math(&self, calculation: &str) -> bool {
@@ -112,14 +108,6 @@ impl Calculator {
           _ => panic!("!unhandled operator"),
         }
 
-        self.stages.push(format!(
-          "  M -->  {} {} {} = {}",
-          previous,
-          operators[index],
-          numbers[index + 1],
-          numbers[index]
-        ));
-
         operators.remove(index);
         numbers.remove(index + 1);
       }
@@ -136,14 +124,6 @@ impl Calculator {
           _ => panic!("!unhandled operator"),
         }
 
-        self.stages.push(format!(
-          "  M -->  {} {} {} = {}",
-          previous,
-          operators[index],
-          numbers[index + 1],
-          numbers[index]
-        ));
-
         operators.remove(index);
         numbers.remove(index + 1);
       }
@@ -152,14 +132,9 @@ impl Calculator {
     numbers[0]
   }
 
-  fn resolve_operation(&mut self, operation: &mut str, stack: i32) -> f32 {
+  fn resolve_operation(&mut self, operation: &mut str, solution: &mut ProblemSolution) -> f32 {
     let mut operators: Vec<char> = Vec::new();
     let mut numbers: Vec<f32> = Vec::new();
-
-    // if stack == 1 {
-      self.stages.push(operation.to_string());
-    // }
-
     let mut digit_start = 0;
     let mut digit_started = false;
     let mut index = 0;
@@ -185,7 +160,9 @@ impl Calculator {
       index += 1;
     }
 
-    self.solve_math(&mut operators, &mut numbers)
+    let answer = self.solve_math(&mut operators, &mut numbers);
+    solution.answer = answer;
+    answer
   }
 }
 
@@ -218,5 +195,3 @@ impl SimpliefiedParse {
     }
   }
 }
-
-struct LogStack {}

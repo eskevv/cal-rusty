@@ -37,8 +37,10 @@ impl ProblemSolution {
   }
 
   pub fn print_solution(&self, is_compact: bool) {
+    println!("\nYour Input: \x1b[0m = \x1b[4m{}\x1b[0m\n", self.problem);
+
     self.print_branches(self.stack * self.tab_space, is_compact, true);
 
-    println!("\n\x1b[36m[FINAL]\x1b[0m = \x1b[4m{}", self.answer);
+    println!("\n\x1b[36m[FINAL]\x1b[0m = \x1b[4m{}\x1b[0m", self.answer);
   }
 }

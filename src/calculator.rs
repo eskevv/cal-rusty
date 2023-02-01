@@ -1,9 +1,8 @@
-// BUG: parentheses not parsed well when close to each other
-
-// ADD: formated output using data structs and recursion / add color
-
+// BUG: parentheses not parsed well when close to each other in odd cases
+// TODO: formated output using data structs and recursion / add color
 // TODO: time and sound for outputting calculations
 // TODO: refactor the parsing
+// TODO: solve_math() faster
 
 use crate::problem_solution::ProblemSolution;
 
@@ -96,7 +95,7 @@ impl Calculator {
     calculation.chars().all(|s| s.is_ascii_digit() || useable.contains(&&s))
   }
 
-  fn solve_math(&mut self, operators: &mut Vec<char>, numbers: &mut Vec<f32>) -> f32 {
+  fn solve_math(&mut self, operators: &mut Vec<char>, numbers: &mut Vec<f32>, solution: &mut ProblemSolution) -> f32 {
     while operators.iter().find(|&&c| c == '*' || c == '/') != None {
       let presedence_1 = operators.iter().position(|&c| c == '/' || c == '*');
       if presedence_1 != None {
@@ -107,6 +106,8 @@ impl Calculator {
           '/' => numbers[index] = numbers[index] / numbers[index + 1],
           _ => panic!("!unhandled operator"),
         }
+
+        solution.steps.push(format!("{} {} {} = {}", previous, operators[index], numbers[index + 1], numbers[index]));
 
         operators.remove(index);
         numbers.remove(index + 1);
@@ -123,6 +124,8 @@ impl Calculator {
           '-' => numbers[index] = numbers[index] - numbers[index + 1],
           _ => panic!("!unhandled operator"),
         }
+
+        solution.steps.push(format!("{} {} {} = {}", previous, operators[index], numbers[index + 1], numbers[index]));
 
         operators.remove(index);
         numbers.remove(index + 1);
@@ -160,7 +163,7 @@ impl Calculator {
       index += 1;
     }
 
-    let answer = self.solve_math(&mut operators, &mut numbers);
+    let answer = self.solve_math(&mut operators, &mut numbers, solution);
     solution.answer = answer;
     answer
   }

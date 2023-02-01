@@ -4,12 +4,12 @@ mod tests;
 mod problem_solution;
 
 fn main() {
-  println!("\n ** Modern Calculator 2023 ** \n");
+  println!("\n ** Rusty-Cal 23 ** \n");
 
-  let problem = "(2 + 8 + 10 + 89) / (78 * 23)";
+  let problem = "(2 + 8 + (10 + 89 / (20 * 7))) * (78 * 23)";
 
   let mut chip = Calculator::new();
 
   chip.compute(problem);
-  chip.solution.print_solution();
+  chip.solution.print_solution(true);
 }

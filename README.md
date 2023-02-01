@@ -1,12 +1,14 @@
-Command Line w/ Rust :)
-[A Scientific and Programmer Calculator]
+### [A Scientific and Programmer Calculator] - Command Line w/ Rust :)
 
 *What it does:*
+1. enter a string of math operations into the command line
+2. operations are formatted and shown in order of precedence
+3. colorful output and formatting showing steps
+
+*TODO:*
 1. choose between scientific and programmer mode
-2. enter a string of math operations into the command line
-3. operations are formatted and shown in order of precedence
-4. colorful output and loading fx
-5. file input for multiple calculations
+2. loading fx
+3. file input for multiple calculations
 
 *Flexibility:*
 1. operations must be in correct mathematical format obviously

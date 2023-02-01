@@ -5,7 +5,7 @@
 2. operations are formatted and shown in order of precedence
 3. colorful output and formatting showing steps
 
-![terminal output](preview.jpg)
+![terminal output](review.jpg)
 
 *TODO:*
 1. choose between scientific and programmer mode

@@ -1,5 +1,7 @@
 ### [A Scientific and Programmer Calculator] - Command Line w/ Rust :)
 
+![terminal output](preview.jpg)
+
 *What it does:*
 1. enter a string of math operations into the command line
 2. operations are formatted and shown in order of precedence

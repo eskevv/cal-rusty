@@ -3,8 +3,6 @@
 // TODO: solve_math() faster
 // TODO: more operators (^ %)
 
-use std::num;
-
 use crate::problem_solution::ProblemSolution;
 
 pub struct Calculator {

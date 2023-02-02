@@ -13,9 +13,7 @@ fn main() {
     println!("{i} : {}", i);
   }
 
-  let problem = "2 ^ 2 ^ 3 + 7 ^ 2";
-  // BUG: adding an extra set of unnecessary parentheses over stack 0 causes errors
-  // this one solves fine
+  let problem = "(2 ^ 2 ^ 3 + 7 ^ 2) ^ 8 + (- 87 + 56 / (40 * 2))";
 
   let mut calculator = Calculator::new();
 

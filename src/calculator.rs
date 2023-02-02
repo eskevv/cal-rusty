@@ -1,8 +1,9 @@
-// BUG: extra parentheses not parsed well when inserted over stack 0 (original input)
 // TODO: time and sound for outputting calculations
 // TODO: refactor the parsing
 // TODO: solve_math() faster
 // TODO: more operators (^ %)
+
+use std::num;
 
 use crate::problem_solution::ProblemSolution;
 
@@ -31,18 +32,27 @@ impl Calculator {
     self.solution.print_solution(compact);
   }
 
+  // [ REGION ] : parsing
+
   fn parse_problem(&mut self, problem: &str, stack: i32) -> ProblemSolution {
     let mut data = SimpliefiedParse::new(&problem);
     let mut local_solution = ProblemSolution::new();
     local_solution.stack = stack;
     local_solution.problem = problem.to_string();
 
+    let mut repeat_allowed_left = true;
+    let mut repeat_allowed_right = true;
+
     for i in problem.chars() {
-      if data.index >= 1 && i == '(' && data.left_last_index == data.index - 1 {
+      if data.index >= 1 && i == '(' && data.left_last_index == data.index - 1 && repeat_allowed_left {
         data.left_repeats += 1;
+      } else if data.left_repeats >= 1 {
+        repeat_allowed_left = false;
       }
-      if data.index >= 1 && i == ')' && data.right_last_index == data.index - 1 {
+      if data.index >= 1 && i == ')' && data.right_last_index == data.index - 1 && repeat_allowed_right {
         data.right_repeats += 1;
+      } else if data.right_repeats >= 1 {
+        repeat_allowed_right = false;
       }
 
       if i == '(' {
@@ -60,6 +70,8 @@ impl Calculator {
       if i == ')' && data.left_count == data.right_count {
         let added = self.evaluate_parsed(problem, &mut data, local_solution.stack + 1);
         local_solution.branches.push(added);
+        repeat_allowed_left = true;
+        repeat_allowed_right = true;
       }
 
       data.index += 1;
@@ -84,18 +96,19 @@ impl Calculator {
     return_recursive
   }
 
-  fn valid_for_math(&self, calculation: &str) -> bool {
-    let useable = vec!['+', '-', '/', '*', '=', ' ', '(', ')'];
-    calculation.chars().all(|s| s.is_ascii_digit() || useable.contains(&&s))
-  }
+  // [ REGION ] : solve simplified equation
 
-  fn solve_with(&mut self, operators: &mut Vec<char>, numbers: &mut Vec<f32>, solution: &mut ProblemSolution, index: usize) {
+  fn solve_with(&mut self, members: &mut EquationMembers, solution: &mut ProblemSolution, index: usize) {
+    let numbers = &mut members.numbers;
+    let operators = &mut members.operators;
+
     let previous = numbers[index];
     match operators[index] {
       '*' => numbers[index] = numbers[index] * numbers[index + 1],
       '/' => numbers[index] = numbers[index] / numbers[index + 1],
       '+' => numbers[index] = numbers[index] + numbers[index + 1],
       '-' => numbers[index] = numbers[index] - numbers[index + 1],
+      '^' => numbers[index] = numbers[index].powf(numbers[index + 1]),
       _ => panic!("!unhandled operator"),
     }
 
@@ -105,54 +118,73 @@ impl Calculator {
     numbers.remove(index + 1);
   }
 
-  fn solve_math(&mut self, operators: &mut Vec<char>, numbers: &mut Vec<f32>, solution: &mut ProblemSolution) -> f32 {
-    while operators.iter().find(|&&c| c == '*' || c == '/') != None {
-      let operation_index = operators.iter().position(|&c| c == '*' || c == '/');
+  fn solve_math(&mut self, members: &mut EquationMembers, solution: &mut ProblemSolution) -> f32 {
+    while members.operators.iter().find(|&&c| c == '^') != None {
+      let operation_index = members.operators.iter().rposition(|&c| c == '^');
       if operation_index != None {
-        self.solve_with(operators, numbers, solution, operation_index.unwrap());
+        self.solve_with(members, solution, operation_index.unwrap());
       }
     }
-    while operators.iter().find(|&&c| c == '+' || c == '-') != None {
-      let operation_index = operators.iter().position(|&c| c == '+' || c == '-');
+    while members.operators.iter().find(|&&c| c == '*' || c == '/') != None {
+      let operation_index = members.operators.iter().position(|&c| c == '*' || c == '/');
       if operation_index != None {
-        self.solve_with(operators, numbers, solution, operation_index.unwrap());
+        self.solve_with(members, solution, operation_index.unwrap());
+      }
+    }
+    while members.operators.iter().find(|&&c| c == '+' || c == '-') != None {
+      let operation_index = members.operators.iter().position(|&c| c == '+' || c == '-');
+      if operation_index != None {
+        self.solve_with(members, solution, operation_index.unwrap());
       }
     }
 
-    numbers[0]
+    members.numbers[0]
   }
 
   fn resolve_operation(&mut self, operation: &mut str, solution: &mut ProblemSolution) {
-    let mut operators: Vec<char> = Vec::new();
-    let mut numbers: Vec<f32> = Vec::new();
+    let mut members = EquationMembers::new();
     let mut digit_start = 0;
     let mut digit_started = false;
     let mut index = 0;
 
     for c in operation.chars() {
-      let mut is_operator = ['*', '-', '/', '+'].contains(&c);
+      let mut is_operator = self.allowed_operators().contains(&c);
 
       if !digit_started && (c == '-' || c.is_ascii_digit()) {
         digit_start = index;
         digit_started = true;
         is_operator = false;
       } else if is_operator {
-        operators.push(c);
+        members.operators.push(c);
       }
 
       if digit_started && (is_operator || index == operation.len() - 1) {
         digit_started = false;
         let end = if index == operation.len() - 1 { index + 1 } else { index };
         let parsed = operation[digit_start..end].replace(' ', "").parse::<f32>();
-        numbers.push(parsed.unwrap_or_default());
+        members.numbers.push(parsed.unwrap_or_default());
       }
 
       index += 1;
     }
 
-    solution.answer = self.solve_math(&mut operators, &mut numbers, solution);
+    solution.answer = self.solve_math(&mut members, solution);
+  }
+
+  // [ REGION ] : utilities
+
+  fn valid_for_math(&self, calculation: &str) -> bool {
+    let mut useable = vec!['=', ' ', '(', ')'];
+    useable.extend_from_slice(self.allowed_operators());
+    calculation.chars().all(|s| s.is_ascii_digit() || useable.contains(&&s))
+  }
+
+  fn allowed_operators(&self) -> &[char] {
+    &['-', '+', '*', '/', '^']
   }
 }
+
+// [ REGION ] : helper structs
 
 struct SimpliefiedParse {
   result: String,
@@ -165,6 +197,17 @@ struct SimpliefiedParse {
   start: usize,
   index: usize,
   can_start: bool,
+}
+
+struct EquationMembers {
+  operators: Vec<char>,
+  numbers: Vec<f32>,
+}
+
+impl EquationMembers {
+  pub fn new() -> Self {
+    Self { operators: Vec::new(), numbers: Vec::new() }
+  }
 }
 
 impl SimpliefiedParse {

@@ -7,7 +7,13 @@ use calculator::Calculator;
 fn main() {
   println!("\n ** Rusty-Cal 23 ** \n");
 
-  let problem = "((((200 + 900 + (800 * 280) - 18898 / (700 * 2 + (200 - (270 - 900 / 2) + 900))))))";
+  let h = vec![2, 2, 2, 5];
+
+  for i in h.iter().rev() {
+    println!("{i} : {}", i);
+  }
+
+  let problem = "2 ^ 2 ^ 3 + 7 ^ 2";
   // BUG: adding an extra set of unnecessary parentheses over stack 0 causes errors
   // this one solves fine
 

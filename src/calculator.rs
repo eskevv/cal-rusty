@@ -1,24 +1,19 @@
-// BUG: parentheses not parsed well when close to each other in odd cases
-// TODO: formated output using data structs and recursion / add color
+// BUG: extra parentheses not parsed well when inserted over stack 0 (original input)
 // TODO: time and sound for outputting calculations
 // TODO: refactor the parsing
 // TODO: solve_math() faster
+// TODO: more operators (^ %)
 
 use crate::problem_solution::ProblemSolution;
 
 pub struct Calculator {
-  stack: i32,
   last_input: String,
-  pub solution: ProblemSolution,
+  solution: ProblemSolution,
 }
 
 impl Calculator {
   pub fn new() -> Self {
-    Calculator {
-      stack: 0,
-      last_input: String::new(),
-      solution: ProblemSolution::new(),
-    }
+    Calculator { last_input: String::new(), solution: ProblemSolution::new() }
   }
 
   pub fn compute(&mut self, problem: &str) {
@@ -28,7 +23,11 @@ impl Calculator {
 
     self.last_input = problem.to_string();
 
-    self.solution = self.parse_problem(problem, self.stack);
+    self.solution = self.parse_problem(problem, 0);
+  }
+
+  pub fn print_solution(&self, compact: bool) {
+    self.solution.print_solution(compact);
   }
 
   fn parse_problem(&mut self, problem: &str, stack: i32) -> ProblemSolution {
@@ -58,12 +57,8 @@ impl Calculator {
       }
 
       if i == ')' && data.left_count == data.right_count {
-        self.stack += 1;
-
         let added = self.evaluate_parsed(problem, &mut data, local_solution.stack + 1);
         local_solution.branches.push(added);
-      } else if data.index == problem.len() - 1 && data.result == problem {
-        self.stack -= 1;
       }
 
       data.index += 1;
@@ -75,12 +70,10 @@ impl Calculator {
   }
 
   fn evaluate_parsed(&mut self, operation: &str, data: &mut SimpliefiedParse, stack: i32) -> ProblemSolution {
-
     let repeats = std::cmp::min(data.left_repeats, data.right_repeats);
     let to_replace = &operation[data.start..data.index + 1];
     let to_calculate = &operation[data.start + 1 + repeats..data.index - repeats];
     let return_recursive = self.parse_problem(&to_calculate, stack);
-
 
     data.result = data.result.replace(to_replace, &format!("{}", return_recursive.answer));
     data.can_start = true;
@@ -95,40 +88,33 @@ impl Calculator {
     calculation.chars().all(|s| s.is_ascii_digit() || useable.contains(&&s))
   }
 
-  fn solve_math(&mut self, operators: &mut Vec<char>, numbers: &mut Vec<f32>, solution: &mut ProblemSolution) -> f32 {
-    while operators.iter().find(|&&c| c == '*' || c == '/') != None {
-      let presedence_1 = operators.iter().position(|&c| c == '/' || c == '*');
-      if presedence_1 != None {
-        let index = presedence_1.unwrap();
-        let previous = numbers[index];
-        match operators[index] {
-          '*' => numbers[index] = numbers[index] * numbers[index + 1],
-          '/' => numbers[index] = numbers[index] / numbers[index + 1],
-          _ => panic!("!unhandled operator"),
-        }
-
-        solution.steps.push(format!("{} {} {} = {}", previous, operators[index], numbers[index + 1], numbers[index]));
-
-        operators.remove(index);
-        numbers.remove(index + 1);
-      }
+  fn solve_with(&mut self, operators: &mut Vec<char>, numbers: &mut Vec<f32>, solution: &mut ProblemSolution, index: usize) {
+    let previous = numbers[index];
+    match operators[index] {
+      '*' => numbers[index] = numbers[index] * numbers[index + 1],
+      '/' => numbers[index] = numbers[index] / numbers[index + 1],
+      '+' => numbers[index] = numbers[index] + numbers[index + 1],
+      '-' => numbers[index] = numbers[index] - numbers[index + 1],
+      _ => panic!("!unhandled operator"),
     }
 
+    solution.steps.push(format!("{} {} {} = {}", previous, operators[index], numbers[index + 1], numbers[index]));
+
+    operators.remove(index);
+    numbers.remove(index + 1);
+  }
+
+  fn solve_math(&mut self, operators: &mut Vec<char>, numbers: &mut Vec<f32>, solution: &mut ProblemSolution) -> f32 {
+    while operators.iter().find(|&&c| c == '*' || c == '/') != None {
+      let operation_index = operators.iter().position(|&c| c == '*' || c == '/');
+      if operation_index != None {
+        self.solve_with(operators, numbers, solution, operation_index.unwrap());
+      }
+    }
     while operators.iter().find(|&&c| c == '+' || c == '-') != None {
-      let presedence_1 = operators.iter().position(|&c| c == '+' || c == '-');
-      if presedence_1 != None {
-        let index = presedence_1.unwrap();
-        let previous = numbers[index];
-        match operators[index] {
-          '+' => numbers[index] = numbers[index] + numbers[index + 1],
-          '-' => numbers[index] = numbers[index] - numbers[index + 1],
-          _ => panic!("!unhandled operator"),
-        }
-
-        solution.steps.push(format!("{} {} {} = {}", previous, operators[index], numbers[index + 1], numbers[index]));
-
-        operators.remove(index);
-        numbers.remove(index + 1);
+      let operation_index = operators.iter().position(|&c| c == '+' || c == '-');
+      if operation_index != None {
+        self.solve_with(operators, numbers, solution, operation_index.unwrap());
       }
     }
 
@@ -163,9 +149,8 @@ impl Calculator {
       index += 1;
     }
 
-    let answer = self.solve_math(&mut operators, &mut numbers, solution);
-    solution.answer = answer;
-    answer
+    solution.answer = self.solve_math(&mut operators, &mut numbers, solution);
+    solution.answer
   }
 }
 

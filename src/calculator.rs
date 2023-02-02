@@ -128,7 +128,6 @@ impl Calculator {
     members.operators.reverse();
     members.numbers.reverse();
 
-    // -> most complicated piece of code in the project ->
     // reverse the collections before properly iterating through them in a double reverse
     // we also need to keep a counter to subtract how much the indeces shifted since the original index scan
     // solve_operands() has to be accounted for in an opposite fashion as to which index you would typically store the result in

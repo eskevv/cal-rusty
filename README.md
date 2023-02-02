@@ -1,4 +1,4 @@
-### [A Scientific and Programmer Calculator] - Command Line w/ Rust :)
+## [A Scientific and Programmer Calculator] - Command Line w/ Rust :)
 
 **What it does:**
 1. *enter a string of math operations into the command line*

@@ -118,23 +118,15 @@ impl Calculator {
 
   fn solve_math(&mut self, members: &mut EquationMembers, solution: &mut ProblemSolution) -> f32 {
     // these while loops can definately be improved (too many iterators created)
-    while members.operators.iter().find(|&&c| c == '^') != None {
-      let operation_index = members.operators.iter().rposition(|&c| c == '^');
-      if operation_index != None {
-        self.solve_with(members, solution, operation_index.unwrap());
-      }
+
+    while let Some(operation_index) =  members.operators.iter().rposition(|&c| c == '^') {
+      self.solve_with(members, solution, operation_index);
     }
-    while members.operators.iter().find(|&&c| c == '*' || c == '/') != None {
-      let operation_index = members.operators.iter().position(|&c| c == '*' || c == '/');
-      if operation_index != None {
-        self.solve_with(members, solution, operation_index.unwrap());
-      }
+    while let Some(operation_index) =  members.operators.iter().position(|&c| c == '*' || c == '/') {
+      self.solve_with(members, solution, operation_index);
     }
-    while members.operators.iter().find(|&&c| c == '+' || c == '-') != None {
-      let operation_index = members.operators.iter().position(|&c| c == '+' || c == '-');
-      if operation_index != None {
-        self.solve_with(members, solution, operation_index.unwrap());
-      }
+    while let Some(operation_index) =  members.operators.iter().position(|&c| c == '+' || c == '-') {
+      self.solve_with(members, solution, operation_index);
     }
 
     members.numbers[0]
@@ -147,12 +139,11 @@ impl Calculator {
     let mut index = 0;
 
     for c in operation.chars() {
-      let mut is_operator = self.allowed_operators().contains(&c);
+      let is_operator = self.allowed_operators().contains(&c);
 
       if !digit_started && (c == '-' || c.is_ascii_digit()) {
         digit_start = index;
         digit_started = true;
-        is_operator = false;
       } else if is_operator {
         members.operators.push(c);
       }

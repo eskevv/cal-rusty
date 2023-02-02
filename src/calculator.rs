@@ -16,7 +16,7 @@ impl Calculator {
     Calculator { last_input: String::new(), solution: ProblemSolution::new() }
   }
 
-  pub fn compute(&mut self, problem: &str) {
+  pub fn compute(&mut self, problem: &str) -> f32 {
     if !self.valid_for_math(problem) {
       panic!("!invalid math format given");
     }
@@ -24,6 +24,7 @@ impl Calculator {
     self.last_input = problem.to_string();
 
     self.solution = self.parse_problem(problem, 0);
+    self.solution.answer
   }
 
   pub fn print_solution(&self, compact: bool) {

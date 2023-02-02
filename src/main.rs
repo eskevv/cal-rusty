@@ -7,7 +7,7 @@ use calculator::Calculator;
 fn main() {
   println!("\n ** Rusty-Cal 23 ** \n");
 
-  let problem = "(2 ^ 2 ^ 3 + 7 ^ 2) ^ 3 + (- 87 + 56 / (40 * 2))";
+  let problem = "2 + 4 * 2 ^ 3 ^ 1";
 
   let mut calculator = Calculator::new();
 

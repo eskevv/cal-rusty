@@ -1,5 +1,4 @@
 // TODO: time and sound for outputting calculations
-// TODO: refactor the parsing
 // TODO: more operators (^ %)
 
 use crate::problem_solution::ProblemSolution;
@@ -95,40 +94,66 @@ impl Calculator {
 
   // [ REGION ] : solve simplified equation
 
-  fn solve_with(&mut self, members: &mut EquationMembers, solution: &mut ProblemSolution, index: usize) {
-    let numbers = &mut members.numbers;
-    let operators = &mut members.operators;
-
-    let previous = numbers[index];
-    match operators[index] {
-      '*' => numbers[index] = numbers[index] * numbers[index + 1],
-      '/' => numbers[index] = numbers[index] / numbers[index + 1],
-      '+' => numbers[index] = numbers[index] + numbers[index + 1],
-      '-' => numbers[index] = numbers[index] - numbers[index + 1],
-      '^' => numbers[index] = numbers[index].powf(numbers[index + 1]),
-      _ => panic!("!unhandled operator"),
+  fn solve_with(&self, lhs: f32, rhs: f32, operator: char) -> f32 {
+    match operator {
+      '*' => lhs * rhs,
+      '/' => lhs / rhs,
+      '+' => lhs + rhs,
+      '-' => lhs - rhs,
+      '^' => lhs.powf(rhs),
+      _ => panic!("!unsupported operator given"),
     }
+  }
 
-    solution.steps.push(format!("{} {} {} = {}", previous, operators[index], numbers[index + 1], numbers[index]));
+  fn get_indices(&self, operators: &[char], look_for: &[char]) -> Vec<usize> {
+    operators
+      .iter()
+      .enumerate()
+      .filter(|(_, &c)| look_for.contains(&c))
+      .map(|(i, _)| i)
+      .collect::<Vec<usize>>()
+  }
 
-    operators.remove(index);
-    numbers.remove(index + 1);
+  fn solve_operands(&self, members: &mut EquationMembers, solution: &mut ProblemSolution, index: usize) {
+    let lhs = members.numbers[index + 1];
+    let rhs = members.numbers[index];
+    let operator = members.operators[index];
+    members.numbers[index + 1] = self.solve_with(lhs, rhs, operator);
+    members.operators.remove(index); // stays the same
+    members.numbers.remove(index); // now index instead of index + 1
+    solution.steps.push(format!("{} {} {} = {}", lhs, operator, rhs, members.numbers[index]));
   }
 
   fn solve_math(&mut self, members: &mut EquationMembers, solution: &mut ProblemSolution) -> f32 {
-    // these while loops can definately be improved (too many iterators created)
+    members.operators.reverse();
+    members.numbers.reverse();
 
-    while let Some(operation_index) =  members.operators.iter().rposition(|&c| c == '^') {
-      self.solve_with(members, solution, operation_index);
+    // -> most complicated piece of code in the project ->
+    // reverse the collections before properly iterating through them in a double reverse
+    // we also need to keep a counter to subtract how much the indeces shifted since the original index scan
+    // solve_operands() has to be accounted for in an opposite fashion as to which index you would typically store the result in
+    // ..left -> right means you store the result in left operand here we store on the right and then shift the with the offset
+    // we need to also reset the offset every time we proceed to the next set of operators
+    // all this ensures we can modify the collection with a single iterator without messing up the order of operations
+
+    let mut operations = 0;
+    // pow operator should be default reversed
+    for index in self.get_indices(&members.operators, &['^']).iter() {
+      self.solve_operands(members, solution, *index - operations);
+      operations += 1;
     }
-    while let Some(operation_index) =  members.operators.iter().position(|&c| c == '*' || c == '/') {
-      self.solve_with(members, solution, operation_index);
+    operations = 0;
+    for index in self.get_indices(&members.operators, &['*', '/']).iter().rev() {
+      self.solve_operands(members, solution, *index - operations);
+      operations += 1;
     }
-    while let Some(operation_index) =  members.operators.iter().position(|&c| c == '+' || c == '-') {
-      self.solve_with(members, solution, operation_index);
+    operations = 0;
+    for index in self.get_indices(&members.operators, &['+', '-']).iter().rev() {
+      self.solve_operands(members, solution, *index - operations);
+      operations += 1;
     }
 
-    members.numbers[0]
+    *members.numbers.last().expect("!this equation did not evalue to any number correctly")
   }
 
   fn resolve_operation(&mut self, operation: &mut str, solution: &mut ProblemSolution) {

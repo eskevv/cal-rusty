@@ -11,6 +11,7 @@
 1. *choose between scientific and programmer mode*
 2. *loading fx*
 3. *file input for multiple calculations*
+4. *fix ugly input*
 
 **Flexibility:**
 1. *operations must be in correct mathematical format obviously*

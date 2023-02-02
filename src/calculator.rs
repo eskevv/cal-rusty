@@ -1,6 +1,5 @@
 // TODO: time and sound for outputting calculations
 // TODO: refactor the parsing
-// TODO: solve_math() faster
 // TODO: more operators (^ %)
 
 use crate::problem_solution::ProblemSolution;

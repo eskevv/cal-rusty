@@ -119,6 +119,7 @@ impl Calculator {
   }
 
   fn solve_math(&mut self, members: &mut EquationMembers, solution: &mut ProblemSolution) -> f32 {
+    // these while loops can definately be improved (too many iterators created)
     while members.operators.iter().find(|&&c| c == '^') != None {
       let operation_index = members.operators.iter().rposition(|&c| c == '^');
       if operation_index != None {

@@ -65,7 +65,7 @@ impl Calculator {
       data.index += 1;
     }
 
-    local_solution.answer = self.resolve_operation(&mut data.result, &mut local_solution);
+    self.resolve_operation(&mut data.result, &mut local_solution);
 
     local_solution
   }
@@ -122,7 +122,7 @@ impl Calculator {
     numbers[0]
   }
 
-  fn resolve_operation(&mut self, operation: &mut str, solution: &mut ProblemSolution) -> f32 {
+  fn resolve_operation(&mut self, operation: &mut str, solution: &mut ProblemSolution) {
     let mut operators: Vec<char> = Vec::new();
     let mut numbers: Vec<f32> = Vec::new();
     let mut digit_start = 0;
@@ -151,7 +151,6 @@ impl Calculator {
     }
 
     solution.answer = self.solve_math(&mut operators, &mut numbers, solution);
-    solution.answer
   }
 }
 

@@ -2,7 +2,7 @@
 
 **What it does:**
 1. *enter a string of math operations into the command line*
-2. *operations are formatted and shown in order of precedence*
+2. *operations are ordered and shown using data created from recursion*
 3. *colorful output and formatting showing steps*
 
 ![terminal output](preview.jpg)

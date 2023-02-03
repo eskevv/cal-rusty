@@ -46,7 +46,7 @@ impl ProblemSolution {
     }
 
     for i in &self.solution.steps {
-      println!("{}  \x1b[37m-->\x1b[0m {i}", space);
+      println!("{}  \x1b[32m-->\x1b[0m {i}", space);
     }
 
     if self.stack != 0 {

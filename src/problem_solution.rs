@@ -52,7 +52,7 @@ impl ProblemSolution {
     if self.stack != 0 {
       println!("{}[\x1b[93m Solution \x1b[0m]: \x1b[43m{}\x1b[0m{}", space, self.solution.answer, compact);
     } else {
-      println!("{}[\x1b[36m Solution \x1b[0m]: \x1b[21m{}\x1b[0m{}", space, self.solution.answer, compact);
+      println!("{}[\x1b[36m Solution \x1b[0m]: \x1b[21m\x1b[36m{}\x1b[0m{}", space, self.solution.answer, compact);
     }
   }
 

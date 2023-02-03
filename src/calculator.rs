@@ -94,6 +94,7 @@ impl Calculator {
       '/' => lhs / rhs,
       '+' => lhs + rhs,
       '-' => lhs - rhs,
+      '%' => lhs % rhs,
       '^' => lhs.powf(rhs),
       _ => panic!("!unsupported operator given"),
     }
@@ -126,6 +127,9 @@ impl Calculator {
       operations += 1;
     }
 
+    for index in self.get_indices(&equation.operators, &['%']).iter().rev() {
+      self.solve_operands(equation, *index);
+    }
     for index in self.get_indices(&equation.operators, &['*', '/']).iter().rev() {
       self.solve_operands(equation, *index);
     }
@@ -185,7 +189,7 @@ impl Calculator {
   }
 
   fn allowed_operators(&self) -> &[char] {
-    &['-', '+', '*', '/', '^']
+    &['-', '+', '*', '/', '^', '%']
   }
 }
 

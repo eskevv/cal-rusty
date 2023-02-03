@@ -141,17 +141,20 @@ impl Calculator {
   }
 
   fn resolve_operation(&mut self, operation: &str) -> Equation {
+
     let mut members = Equation::new();
     let mut digit_start = 0;
     let mut digit_started = false;
     let mut index = 0;
 
+
     for c in operation.chars() {
-      let is_operator = self.allowed_operators().contains(&c);
+      let mut is_operator = self.allowed_operators().contains(&c);
 
       if !digit_started && (c == '-' || c.is_ascii_digit()) {
         digit_start = index;
         digit_started = true;
+        is_operator = false;
       } else if is_operator {
         members.operators.push(c);
       }
@@ -160,11 +163,17 @@ impl Calculator {
         digit_started = false;
         let end = if index == operation.len() - 1 { index + 1 } else { index };
         let parsed = operation[digit_start..end].replace(' ', "").parse::<f32>();
-        members.numbers.push(parsed.unwrap_or_default());
+        let n = parsed.unwrap_or_default();
+        println!("index: {index} | number: {} | lookat: {c}", n);
+        members.numbers.push(n);
+        // members.numbers.push(parsed.unwrap_or_default());
       }
 
       index += 1;
     }
+
+    println!("{:?}", members.operators);
+    println!("{:?}", members.numbers);
 
     self.solve_math(&mut members);
 

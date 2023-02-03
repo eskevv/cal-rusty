@@ -24,10 +24,9 @@ fn main() {
     std::io::stdin().read_line(&mut string_given).expect("!failed to read line");
     String::from(string_given.trim())
   } else {
-    String::from("5 % 2 ^ 5 * (23 * 5 ^ 3)".trim())
+    String::from("4 * -2".trim())
   };
 
-  println!("{problem}");
 
   let mut calculator = Calculator::new();
 

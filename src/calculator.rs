@@ -14,7 +14,7 @@ impl Calculator {
     Calculator { last_input: String::new(), results: ProblemSolution::new() }
   }
 
-  pub fn compute(&mut self, problem: &str) -> f32 {
+  pub fn compute(&mut self, problem: &str) -> f64 {
     if !self.valid_for_math(problem) {
       panic!("!invalid math format given");
     }
@@ -88,7 +88,7 @@ impl Calculator {
 
   // [ REGION ] : solve simplified equation
 
-  fn solve_with(&self, lhs: f32, rhs: f32, operator: char) -> f32 {
+  fn solve_with(&self, lhs: f64, rhs: f64, operator: char) -> f64 {
     match operator {
       '*' => lhs * rhs,
       '/' => lhs / rhs,
@@ -162,11 +162,8 @@ impl Calculator {
       if digit_started && (is_operator || index == operation.len() - 1) {
         digit_started = false;
         let end = if index == operation.len() - 1 { index + 1 } else { index };
-        let parsed = operation[digit_start..end].replace(' ', "").parse::<f32>();
-        let n = parsed.unwrap_or_default();
-        println!("index: {index} | number: {} | lookat: {c}", n);
-        members.numbers.push(n);
-        // members.numbers.push(parsed.unwrap_or_default());
+        let parsed = operation[digit_start..end].replace(' ', "").parse::<f64>();
+        members.numbers.push(parsed.unwrap_or_default());
       }
 
       index += 1;
@@ -183,7 +180,7 @@ impl Calculator {
   // [ REGION ] : utilities
 
   fn valid_for_math(&self, calculation: &str) -> bool {
-    let mut useable = vec!['=', ' ', '(', ')', '\n'];
+    let mut useable = vec!['=', ' ', '(', ')', '\n', '.'];
     useable.extend_from_slice(self.allowed_operators());
     calculation.chars().all(|s| s.is_ascii_digit() || useable.contains(&&s))
   }

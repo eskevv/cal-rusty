@@ -24,7 +24,7 @@ fn main() {
     std::io::stdin().read_line(&mut string_given).expect("!failed to read line");
     String::from(string_given.trim())
   } else {
-    String::from("4 * -2".trim())
+    String::from("9797899999990 + 6622.2407".trim())
   };
 
 

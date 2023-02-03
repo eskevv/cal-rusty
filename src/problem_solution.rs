@@ -1,8 +1,8 @@
 pub struct Equation {
   pub operators: Vec<char>,
-  pub numbers: Vec<f32>,
+  pub numbers: Vec<f64>,
   pub steps: Vec<String>,
-  pub answer: f32,
+  pub answer: f64,
 }
 
 pub struct ProblemSolution {

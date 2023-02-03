@@ -2,15 +2,16 @@
 // TODO: more operators (^ %)
 
 use crate::problem_solution::ProblemSolution;
+use crate::problem_solution::Equation;
 
 pub struct Calculator {
   last_input: String,
-  solution: ProblemSolution,
+  results: ProblemSolution,
 }
 
 impl Calculator {
   pub fn new() -> Self {
-    Calculator { last_input: String::new(), solution: ProblemSolution::new() }
+    Calculator { last_input: String::new(), results: ProblemSolution::new() }
   }
 
   pub fn compute(&mut self, problem: &str) -> f32 {
@@ -20,35 +21,30 @@ impl Calculator {
 
     self.last_input = problem.to_string();
 
-    self.solution = self.parse_problem(problem, 0);
-    self.solution.answer
+    self.results = self.parse_problem(problem, 0);
+    self.results.solution.answer
   }
 
-  pub fn print_solution(&self, compact: bool) {
-    self.solution.print_solution(compact);
+  pub fn print_solution(&self, compact: bool, tab_spaces: i32) {
+    self.results.print_solution(compact, tab_spaces);
   }
 
   // [ REGION ] : parsing
 
   fn parse_problem(&mut self, problem: &str, stack: i32) -> ProblemSolution {
     let mut data = SimpliefiedParse::new(&problem);
-    let mut local_solution = ProblemSolution::new();
-    local_solution.stack = stack;
-    local_solution.problem = problem.to_string();
-
-    let mut repeat_allowed_left = true;
-    let mut repeat_allowed_right = true;
+    let mut branches = Vec::<ProblemSolution>::new();
 
     for i in problem.chars() {
-      if data.index >= 1 && i == '(' && data.left_last_index == data.index - 1 && repeat_allowed_left {
+      if data.index >= 1 && i == '(' && data.left_last_index == data.index - 1 && data.repeat_allowed_left {
         data.left_repeats += 1;
       } else if data.left_repeats >= 1 {
-        repeat_allowed_left = false;
+        data.repeat_allowed_left = false;
       }
-      if data.index >= 1 && i == ')' && data.right_last_index == data.index - 1 && repeat_allowed_right {
+      if data.index >= 1 && i == ')' && data.right_last_index == data.index - 1 && data.repeat_allowed_right {
         data.right_repeats += 1;
       } else if data.right_repeats >= 1 {
-        repeat_allowed_right = false;
+        data.repeat_allowed_right = false;
       }
 
       if i == '(' {
@@ -64,30 +60,28 @@ impl Calculator {
       }
 
       if i == ')' && data.left_count == data.right_count {
-        let added = self.evaluate_parsed(problem, &mut data, local_solution.stack + 1);
-        local_solution.branches.push(added);
-        repeat_allowed_left = true;
-        repeat_allowed_right = true;
+        branches.push(self.evaluate_parsed(problem, &mut data, stack + 1));
       }
 
       data.index += 1;
     }
 
-    self.resolve_operation(&mut data.result, &mut local_solution);
-
-    local_solution
+    ProblemSolution {
+      stack,
+      branches,
+      problem: problem.to_string(),
+      solution: self.resolve_operation(&data.result)
+    }
   }
 
   fn evaluate_parsed(&mut self, operation: &str, data: &mut SimpliefiedParse, stack: i32) -> ProblemSolution {
     let repeats = std::cmp::min(data.left_repeats, data.right_repeats);
     let to_replace = &operation[data.start..data.index + 1];
     let to_calculate = &operation[data.start + 1 + repeats..data.index - repeats];
-    let return_recursive = self.parse_problem(&to_calculate, stack);
+    let return_recursive: ProblemSolution = self.parse_problem(&to_calculate, stack);
 
-    data.result = data.result.replace(to_replace, &format!("{}", return_recursive.answer));
-    data.can_start = true;
-    data.left_repeats = 0;
-    data.right_repeats = 0;
+    let replacement = data.result.replace(to_replace, &format!("{}", return_recursive.solution.answer));
+    data.equation_replace(&replacement);
 
     return_recursive
   }
@@ -105,58 +99,47 @@ impl Calculator {
     }
   }
 
-  fn get_indices(&self, operators: &[char], look_for: &[char]) -> Vec<usize> {
-    operators
-      .iter()
-      .enumerate()
-      .filter(|(_, &c)| look_for.contains(&c))
-      .map(|(i, _)| i)
-      .collect::<Vec<usize>>()
+  fn solve_operands(&self, equation: &mut Equation, index: usize) {
+    let lhs = equation.numbers[index + 1];
+    let rhs = equation.numbers[index];
+    let operator = equation.operators[index];
+    equation.numbers[index + 1] = self.solve_with(lhs, rhs, operator);
+    equation.operators.remove(index);
+    equation.numbers.remove(index); // now index instead of index + 1
+    equation.steps.push(format!("{} {} {} = {}", lhs, operator, rhs, equation.numbers[index]));
   }
 
-  fn solve_operands(&self, members: &mut EquationMembers, solution: &mut ProblemSolution, index: usize) {
-    let lhs = members.numbers[index + 1];
-    let rhs = members.numbers[index];
-    let operator = members.operators[index];
-    members.numbers[index + 1] = self.solve_with(lhs, rhs, operator);
-    members.operators.remove(index); // stays the same
-    members.numbers.remove(index); // now index instead of index + 1
-    solution.steps.push(format!("{} {} {} = {}", lhs, operator, rhs, members.numbers[index]));
-  }
-
-  fn solve_math(&mut self, members: &mut EquationMembers, solution: &mut ProblemSolution) -> f32 {
-    members.operators.reverse();
-    members.numbers.reverse();
-
+  fn solve_math(&mut self, equation: &mut Equation) {
     // reverse the collections before properly iterating through them in a double reverse
     // we also need to keep a counter to subtract how much the indeces shifted since the original index scan
     // solve_operands() has to be accounted for in an opposite fashion as to which index you would typically store the result in
-    // ..left -> right means you store the result in left operand here we store on the right and then shift the with the offset
+    // ..left -> right means you store the result in left operand here we store on the right and then shift with the offset
     // we need to also reset the offset every time we proceed to the next set of operators
     // all this ensures we can modify the collection with a single iterator without messing up the order of operations
 
+    equation.operators.reverse();
+    equation.numbers.reverse();
+
     let mut operations = 0;
     // pow operator should be default reversed
-    for index in self.get_indices(&members.operators, &['^']).iter() {
-      self.solve_operands(members, solution, *index - operations);
+    for index in self.get_indices(&equation.operators, &['^']).iter() {
+      self.solve_operands(equation, *index - operations);
       operations += 1;
     }
     operations = 0;
-    for index in self.get_indices(&members.operators, &['*', '/']).iter().rev() {
-      self.solve_operands(members, solution, *index - operations);
-      operations += 1;
+    for index in self.get_indices(&equation.operators, &['*', '/']).iter().rev() {
+      self.solve_operands(equation, *index - operations);
     }
     operations = 0;
-    for index in self.get_indices(&members.operators, &['+', '-']).iter().rev() {
-      self.solve_operands(members, solution, *index - operations);
-      operations += 1;
+    for index in self.get_indices(&equation.operators, &['+', '-']).iter().rev() {
+      self.solve_operands(equation, *index - operations);
     }
 
-    *members.numbers.last().expect("!this equation did not evalue to any number correctly")
+    equation.answer = *equation.numbers.last().expect("!this equation did not evalue to any number correctly");
   }
 
-  fn resolve_operation(&mut self, operation: &mut str, solution: &mut ProblemSolution) {
-    let mut members = EquationMembers::new();
+  fn resolve_operation(&mut self, operation: &str) -> Equation {
+    let mut members = Equation::new();
     let mut digit_start = 0;
     let mut digit_started = false;
     let mut index = 0;
@@ -181,7 +164,9 @@ impl Calculator {
       index += 1;
     }
 
-    solution.answer = self.solve_math(&mut members, solution);
+    self.solve_math(&mut members);
+
+    members
   }
 
   // [ REGION ] : utilities
@@ -190,6 +175,15 @@ impl Calculator {
     let mut useable = vec!['=', ' ', '(', ')'];
     useable.extend_from_slice(self.allowed_operators());
     calculation.chars().all(|s| s.is_ascii_digit() || useable.contains(&&s))
+  }
+
+  fn get_indices(&self, operators: &[char], look_for: &[char]) -> Vec<usize> {
+    operators
+      .iter()
+      .enumerate()
+      .filter(|(_, &c)| look_for.contains(&c))
+      .map(|(i, _)| i)
+      .collect::<Vec<usize>>()
   }
 
   fn allowed_operators(&self) -> &[char] {
@@ -207,20 +201,11 @@ struct SimpliefiedParse {
   right_count: usize,
   right_last_index: usize,
   right_repeats: usize,
+  repeat_allowed_left: bool,
+  repeat_allowed_right: bool,
   start: usize,
   index: usize,
   can_start: bool,
-}
-
-struct EquationMembers {
-  operators: Vec<char>,
-  numbers: Vec<f32>,
-}
-
-impl EquationMembers {
-  pub fn new() -> Self {
-    Self { operators: Vec::new(), numbers: Vec::new() }
-  }
 }
 
 impl SimpliefiedParse {
@@ -233,9 +218,20 @@ impl SimpliefiedParse {
       right_count: 0,
       right_last_index: 0,
       right_repeats: 0,
+      repeat_allowed_left: true,
+      repeat_allowed_right: true,
       start: 0,
       index: 0,
       can_start: true,
     }
+  }
+
+  fn equation_replace(&mut self, result: &str) {
+    self.result = result.to_string();
+    self.can_start = true;
+    self.left_repeats = 0;
+    self.right_repeats = 0;
+    self.repeat_allowed_left = true;
+    self.repeat_allowed_right = true;
   }
 }

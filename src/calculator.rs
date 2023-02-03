@@ -168,10 +168,6 @@ impl Calculator {
 
       index += 1;
     }
-
-    println!("{:?}", members.operators);
-    println!("{:?}", members.numbers);
-
     self.solve_math(&mut members);
 
     members

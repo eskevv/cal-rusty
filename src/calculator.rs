@@ -174,7 +174,7 @@ impl Calculator {
   // [ REGION ] : utilities
 
   fn valid_for_math(&self, calculation: &str) -> bool {
-    let mut useable = vec!['=', ' ', '(', ')'];
+    let mut useable = vec!['=', ' ', '(', ')', '\n'];
     useable.extend_from_slice(self.allowed_operators());
     calculation.chars().all(|s| s.is_ascii_digit() || useable.contains(&&s))
   }

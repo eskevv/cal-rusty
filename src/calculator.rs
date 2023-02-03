@@ -126,13 +126,12 @@ impl Calculator {
       self.solve_operands(equation, *index - operations);
       operations += 1;
     }
-    operations = 0;
+
     for index in self.get_indices(&equation.operators, &['*', '/']).iter().rev() {
-      self.solve_operands(equation, *index - operations);
+      self.solve_operands(equation, *index);
     }
-    operations = 0;
     for index in self.get_indices(&equation.operators, &['+', '-']).iter().rev() {
-      self.solve_operands(equation, *index - operations);
+      self.solve_operands(equation, *index);
     }
 
     equation.answer = *equation.numbers.last().expect("!this equation did not evalue to any number correctly");

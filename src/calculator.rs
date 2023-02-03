@@ -114,7 +114,6 @@ impl Calculator {
     // we also need to keep a counter to subtract how much the indeces shifted since the original index scan
     // solve_operands() has to be accounted for in an opposite fashion as to which index you would typically store the result in
     // ..left -> right means you store the result in left operand here we store on the right and then shift with the offset
-    // we need to also reset the offset every time we proceed to the next set of operators
     // all this ensures we can modify the collection with a single iterator without messing up the order of operations
 
     equation.operators.reverse();
@@ -134,7 +133,7 @@ impl Calculator {
       self.solve_operands(equation, *index);
     }
 
-    equation.answer = *equation.numbers.last().expect("!this equation did not evalue to any number correctly");
+    equation.answer = *equation.numbers.last().expect("!this equation did not evaluate to any number correctly");
   }
 
   fn resolve_operation(&mut self, operation: &str) -> Equation {

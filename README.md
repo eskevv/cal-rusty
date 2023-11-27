@@ -7,6 +7,12 @@
 
 ![terminal output](preview.jpg)
 
+**How to use:**
+1. *install rust and cargo (https://www.rust-lang.org/tools/install)*
+2. *clone the repo*
+3. *navigate to the repo* 
+4. *run `cargo run`*
+
 **TODO:**
 1. *choose between scientific and programmer mode*
 2. *loading fx*
